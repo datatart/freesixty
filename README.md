@@ -2,7 +2,7 @@
 
 A simple Google Analytics API data extraction.
 
-# Example:
+## Simple example:
 
 #### 1. Install freesixty
 ```bash
@@ -38,4 +38,15 @@ ls /tmp/example/folder
 ```
 
 #### 4. Profit
-🍰🍰:cake:🍰🍰🍰🍰
+:cake:
+
+
+## Splitting query example
+In case a query would return over 100k rows of data it will fail. We can get around it by splitting the date range into smaller chunks. E.g.:
+
+```python
+queries = freesixty.split_query(query=query, start_date='2019-01-01', end_date='2019-02-01', freq='D')
+
+for q in queries:
+    freesixty.store_query(analytics, query, folder_uri, 'json')
+```

@@ -2,19 +2,21 @@
 
 A simple Google Analytics API data extraction.
 
-## Simple example:
-
-#### 1. Install freesixty
+## Installation
 ```bash
 pip install freesixty
 ```
 
-#### 2. Get data
+## Access credentials
+
+To set up access to your Google Analytics follow first step of [these instructions](https://developers.google.com/analytics/devguides/reporting/core/v4/quickstart/service-py).
+Store them in your local machine and enter their path into `KEY_FILE_LOCATION` variable.
+
+## Get data
 ```python
 import freesixty
 
-SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
-KEY_FILE_LOCATION = 'gcp_keyfile.json'
+KEY_FILE_LOCATION = './client_secrets.json'
 VIEW_ID = 'XXXXXXX'
 
 query = {
@@ -29,24 +31,28 @@ query = {
 
 folder_uri = 'file:///tmp/example/folder'
 analytics = freesixty.initialize_analyticsreporting(KEY_FILE_LOCATION)
-freesixty.store_query(analytics, query, folder_uri, 'json')
+freesixty.store_query(analytics, query, folder_uri)
 ```
 
-#### 3. Use it
-```bash
-ls /tmp/example/folder
-```
-
-#### 4. Profit
-:cake:
-
-
-## Splitting query example
-In case a query would return over 100k rows of data it will fail. We can get around it by splitting the date range into smaller chunks. E.g.:
+## Getting more data
+In case a query would return over 100k rows of data it will fail. We can get around it by splitting the date range into smaller chunks:
 
 ```python
 queries = freesixty.split_query(query=query, start_date='2019-01-01', end_date='2019-02-01', freq='D')
 
-for q in queries:
-    freesixty.store_query(analytics, query, folder_uri, 'json')
+for query in queries:
+    freesixty.store_query(analytics, query, folder_uri)
 ```
+
+
+# Useful links
+
+* [Try out queries](https://ga-dev-tools.appspot.com/query-explorer/)
+* [Compose queries](https://ga-dev-tools.appspot.com/request-composer/)
+
+
+# TODO:
+* More complete tests
+
+
+:cake:

@@ -101,7 +101,7 @@ def _generate_folder_uri(query):
     return os.path.join(query['reportRequests'][0]['viewId'], query_hash, all_dates)
 
 
-def store_query(analytics, query, folder_uri, fmt='csv'):
+def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01'):
     """Queries the Analytics Reporting API V4 and stores the result of the query to the given URI.
     If data already exists the query is not executed.
 
@@ -135,7 +135,18 @@ def store_query(analytics, query, folder_uri, fmt='csv'):
             break
 
     if fmt == 'csv':
-        raise NotImplementedError("Format {fmt} support is not yet implemented.")
+        newline = '\n'
+        dimension_columns = report['reports'][0]['columnHeader']['dimensions']
+        metric_headers = report['reports'][0]['columnHeader']['metricHeader']['metricHeaderEntries']
+        metric_columns = [x['name'] for x in metric_headers]
+        columns = [x.replace('ga:', '') for x in dimension_columns + metric_columns]
+        data = delimiter.join(columns) + newline
+
+        for report in out['reports']:
+            for row in report['data']['rows']:
+                row = row['dimensions'] + [y for x in row['metrics'] for y in x['values']]
+                data = data + delimiter.join(row) + '\n'
+
     elif fmt == 'json':
         data = json.dumps(out, indent=4, sort_keys=True)
     else:

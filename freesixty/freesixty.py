@@ -88,7 +88,7 @@ def _generate_folder_uri(query):
     relative folder path, a string.
     """
 
-    assert len(query['reportRequests']) < 2  # Is this a good assumption?
+    assert len(query['reportRequests']) == 1  # Only allow one report per query.
 
     undated_query = copy.deepcopy(query)
     [report_request.pop('dateRanges') for report_request in undated_query['reportRequests']]
@@ -98,10 +98,45 @@ def _generate_folder_uri(query):
     date_range_strings = ['-'.join(date_range.values()) for date_range in date_ranges]
     all_dates = '_'.join(date_range_strings)
 
-    return os.path.join(query['reportRequests'][0]['viewId'], query_hash, all_dates)
+    return '-'.join([query['reportRequests'][0]['viewId'], query_hash, all_dates])
 
 
-def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01'):
+def execute_query(analytics, query):
+    """Queries the Analytics Reporting API V4 and returns result.
+
+    Args:
+    analytics: An authorized Analytics Reporting API V4 service object.
+    query: Dict. Query for the reporting API.
+    Returns:
+    out: Returned API data.
+    """
+
+    assert len(query['reportRequests']) == 1  # Only allow one report per query.
+
+    q = copy.deepcopy(query)
+    out = {'reports': [{'data': {'rows': []}}]}
+    is_data_golden = True
+
+    while True:
+        report = analytics.reports().batchGet(body=q).execute()
+
+        if not report['reports'][0]["data"].get('isDataGolden', False):
+            is_data_golden = False
+
+        token = report.get('reports', [])[0].get('nextPageToken', '')
+        out['reports'][0]['data']['rows'] += report['reports'][0]['data'].get('rows', [])
+
+        if token:
+            q['reportRequests'][0]['pageToken'] = token
+        else:
+            break
+
+    out['reports'][0]['columnHeader'] = report['reports'][0]['columnHeader']
+
+    return out, is_data_golden
+
+
+def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only_golden=False):
     """Queries the Analytics Reporting API V4 and stores the result of the query to the given URI.
     If data already exists the query is not executed.
 
@@ -114,46 +149,33 @@ def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01'):
     file_uri: URI to stored data.
     """
 
-    assert len(query['reportRequests']) < 2  # Is this a good assumption?
-
     file_uri = os.path.join(folder_uri, _generate_folder_uri(query)) + '.' + fmt
 
     if _exists(file_uri):
         return file_uri
 
-    q = copy.deepcopy(query)
-    out = {'reports': []}
+    out, is_data_golden = execute_query(analytics, query)
 
-    while True:
-        report = analytics.reports().batchGet(body=q).execute()
-        token = report.get('reports', [])[0].get('nextPageToken', '')
-        out['reports'] = out['reports'] + report['reports']
-
-        if token:
-            q['reportRequests'][0]['pageToken'] = token
-        else:
-            break
+    if only_golden and not is_data_golden:
+        raise ValueError("Data is not golden and we shouldn't write it.")
 
     if fmt == 'csv':
         newline = '\n'
-        dimension_columns = report['reports'][0]['columnHeader']['dimensions']
-        metric_headers = report['reports'][0]['columnHeader']['metricHeader']['metricHeaderEntries']
+        dimension_columns = out['reports'][0]['columnHeader']['dimensions']
+        metric_headers = out['reports'][0]['columnHeader']['metricHeader']['metricHeaderEntries']
         metric_columns = [x['name'] for x in metric_headers]
         columns = [x.replace('ga:', '') for x in dimension_columns + metric_columns]
         data = delimiter.join(columns) + newline
 
-        for report in out['reports']:
-            for row in report['data']['rows']:
-                row = row['dimensions'] + [y for x in row['metrics'] for y in x['values']]
-                data = data + delimiter.join(row) + '\n'
-
+        for row in out['reports'][0]['data']['rows']:
+            row = row['dimensions'] + [y for x in row['metrics'] for y in x['values']]
+            data = data + delimiter.join(row) + '\n'
     elif fmt == 'json':
         data = json.dumps(out, indent=4, sort_keys=True)
     else:
         raise NotImplementedError("Format {fmt} support is not yet implemented.")
 
     _write(data, file_uri)
-
     return file_uri
 
 

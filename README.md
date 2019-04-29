@@ -29,7 +29,28 @@ query = {
     }]
 }
 
+analytics = freesixty.initialize_analyticsreporting(KEY_FILE_LOCATION)
+result, is_data_golden = freesixty.execute_query(analytics, query)
+```
+
+On the other hand if we want to store resulting data to a desired URI.
+```python
+import freesixty
+
+KEY_FILE_LOCATION = './client_secrets.json'
+VIEW_ID = 'XXXXXXX'
 folder_uri = 'file:///tmp/example/folder'
+
+query = {
+    'reportRequests': [
+    {
+        'viewId': VIEW_ID,
+        'dateRanges': [{'startDate': '2009-01-01', 'endDate': '2019-01-05'}],
+        'metrics': [{'expression': 'ga:sessions'}],
+        'dimensions': [{'name': 'ga:country', 'name': 'ga:date'}]
+    }]
+}
+
 analytics = freesixty.initialize_analyticsreporting(KEY_FILE_LOCATION)
 freesixty.store_query(analytics, query, folder_uri)
 ```

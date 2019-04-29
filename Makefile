@@ -6,4 +6,7 @@ tests: requirements
 requirements:
 	pip install -r requirements.txt
 
+release:
+	python setup.py upload
+
 .PHONY: default

@@ -161,14 +161,10 @@ def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only
 
     if fmt == 'csv':
         newline = '\n'
-        dimension_columns = out['reports'][0]['columnHeader']['dimensions']
-        metric_headers = out['reports'][0]['columnHeader']['metricHeader']['metricHeaderEntries']
-        metric_columns = [x['name'] for x in metric_headers]
-        columns = [x.replace('ga:', '') for x in dimension_columns + metric_columns]
+        columns, rows = report_to_list(out)
         data = delimiter.join(columns) + newline
 
-        for row in out['reports'][0]['data']['rows']:
-            row = row['dimensions'] + [y for x in row['metrics'] for y in x['values']]
+        for row in rows:
             data = data + delimiter.join(row) + '\n'
     elif fmt == 'json':
         data = json.dumps(out, indent=4, sort_keys=True)
@@ -177,6 +173,20 @@ def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only
 
     _write(data, file_uri)
     return file_uri
+
+
+def report_to_list(report):
+    dimension_columns = report['reports'][0]['columnHeader']['dimensions']
+    metric_headers = report['reports'][0]['columnHeader']['metricHeader']['metricHeaderEntries']
+    metric_columns = [x['name'] for x in metric_headers]
+    columns = [x.replace('ga:', '') for x in dimension_columns + metric_columns]
+
+    rows = []
+    for row in report['reports'][0]['data']['rows']:
+        row = row['dimensions'] + [y for x in row['metrics'] for y in x['values']]
+        rows.append(row)
+
+    return columns, rows
 
 
 def split_query(query, start_date, end_date, freq='M', fmt='%Y-%m-%d', byweekday=0):

@@ -120,7 +120,9 @@ def execute_query(analytics, query):
     while True:
         report = analytics.reports().batchGet(body=q).execute()
 
-        if not report['reports'][0]["data"].get('isDataGolden', False):
+        batch_is_golden = report['reports'][0]["data"].get('isDataGolden', False)
+
+        if not batch_is_golden:
             is_data_golden = False
 
         token = report.get('reports', [])[0].get('nextPageToken', '')
@@ -136,7 +138,7 @@ def execute_query(analytics, query):
     return out, is_data_golden
 
 
-def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only_golden=False):
+def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only_golden=True):
     """Queries the Analytics Reporting API V4 and stores the result of the query to the given URI.
     If data already exists the query is not executed.
 
@@ -160,10 +162,8 @@ def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only
         raise ValueError("Data is not golden and we shouldn't write it.")
 
     if fmt == 'csv':
-        newline = '\n'
         columns, rows = report_to_list(out)
-        data = delimiter.join(columns) + newline
-
+        data = delimiter.join(columns) + '\n'
         for row in rows:
             data = data + delimiter.join(row) + '\n'
     elif fmt == 'json':

@@ -208,18 +208,18 @@ def split_query(query, start_date, end_date, freq='M', fmt='%Y-%m-%d', byweekday
 
     if freq == 'D':
         dates = rrule(freq=DAILY, dtstart=start_date, until=end_date)
+        periods = [{'startDate': x.strftime(fmt), 'endDate': y.strftime(fmt)} for x, y in zip(dates, dates)]
 
     elif freq == 'W':
         dates = rrule(freq=WEEKLY, dtstart=start_date, until=end_date, byweekday=byweekday)
+        periods = [{'startDate': x.strftime(fmt), 'endDate': y.strftime(fmt)} for x, y in zip(dates, dates[1:])]
 
     elif freq == 'M':
         dates = rrule(freq=MONTHLY, dtstart=start_date, until=end_date, bymonthday=1)
-
+        periods = [{'startDate': x.strftime(fmt), 'endDate': y.strftime(fmt)} for x, y in zip(dates, dates[1:])]
     else:
         raise NotImplementedError("Frequency {freq} split is not valid or implemented.".format(freq=freq))
 
-    periods = [{'startDate': start_date.strftime(fmt),
-                'endDate': end_date.strftime(fmt)} for start_date, end_date in zip(dates, dates[1:])]
 
     queries = []
     for period in periods:

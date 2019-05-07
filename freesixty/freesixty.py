@@ -4,11 +4,14 @@ from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY
 from hashlib import md5
 import json
 import os
+import random
+import time
 import urllib
 
 import boto3
 from botocore.exceptions import ClientError
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from oauth2client.service_account import ServiceAccountCredentials
 
 SCOPES = ('https://www.googleapis.com/auth/analytics.readonly',)
@@ -101,7 +104,7 @@ def _generate_folder_uri(query):
     return '-'.join([query['reportRequests'][0]['viewId'], query_hash, all_dates])
 
 
-def execute_query(analytics, query):
+def execute_query(analytics, query, backoff=True):
     """Queries the Analytics Reporting API V4 and returns result.
 
     Args:
@@ -116,9 +119,22 @@ def execute_query(analytics, query):
     q = copy.deepcopy(query)
     out = {'reports': [{'data': {'rows': []}}]}
     is_data_golden = True
+    n_retries = 5
+    quota_related_errors = ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']
 
     while True:
-        report = analytics.reports().batchGet(body=q).execute()
+        if backoff:
+            for n in range(0, n_retries):
+                try:
+                    report = analytics.reports().batchGet(body=q).execute()
+
+                except HttpError as error:
+                    if error.resp.reason in quota_related_errors and n < n_retries - 1:
+                        time.sleep((2 ** n) + random.random())
+                    else:
+                        raise
+        else:
+            report = analytics.reports().batchGet(body=q).execute()
 
         batch_is_golden = report['reports'][0]["data"].get('isDataGolden', False)
 

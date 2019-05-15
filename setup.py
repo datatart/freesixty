@@ -11,7 +11,7 @@ URL = 'https://github.com/datatart/freesixty'
 EMAIL = 'me@rok.dev'
 AUTHOR = 'Rok Mihevc'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.1.7'
+VERSION = '0.1.8'
 
 REQUIRED = [
     'boto3', 'google-api-python-client', 'oauth2client'

@@ -104,7 +104,7 @@ def _generate_folder_uri(query):
     return '-'.join([query['reportRequests'][0]['viewId'], query_hash, all_dates])
 
 
-def _make_batch_request_with_exponential_backoff(analytics, query, n_retries=5):
+def _make_batch_request_with_exponential_backoff(analytics, query, n_retries):
     quota_related_errors = ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']
 
     for n in range(0, n_retries):
@@ -119,7 +119,7 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries=5):
                 raise
 
 
-def execute_query(analytics, query, backoff=True):
+def execute_query(analytics, query, n_retries=5):
     """Queries the Analytics Reporting API V4 and returns result.
 
     Args:
@@ -136,8 +136,8 @@ def execute_query(analytics, query, backoff=True):
     is_data_golden = True
 
     while True:
-        if backoff:
-            report = _make_batch_request_with_exponential_backoff(analytics, q)
+        if n_retries:
+            report = _make_batch_request_with_exponential_backoff(analytics, q, n_retries)
         else:
             report = analytics.reports().batchGet(body=q).execute()
 

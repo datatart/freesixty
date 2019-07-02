@@ -159,7 +159,7 @@ def execute_query(analytics, query, n_retries=5):
     return out, is_data_golden
 
 
-def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only_golden=True, n_retries=5):
+def store_query(analytics, query, folder_uri, non_golden_folder_uri=None, fmt='csv', delimiter='\01', only_golden=True, n_retries=5):
     """Queries the Analytics Reporting API V4 and stores the result of the query to the given URI.
     If data already exists the query is not executed.
 
@@ -182,8 +182,8 @@ def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only
 
     if only_golden and not is_data_golden:
         raise ValueError("Data is not golden and we shouldn't write it.")
-    elif not only_golden and not is_data_golden:
-        file_uri = os.path.join(folder_uri, 'not_golden', _generate_folder_uri(query)) + '.' + fmt
+    elif not only_golden and not is_data_golden and non_golden_folder_uri:
+        file_uri = os.path.join(non_golden_folder_uri, _generate_folder_uri(query)) + '.' + fmt
 
     if fmt == 'csv':
         columns, rows = report_to_list(out)

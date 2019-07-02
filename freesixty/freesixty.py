@@ -174,6 +174,7 @@ def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only
 
     file_uri = os.path.join(folder_uri, _generate_folder_uri(query)) + '.' + fmt
 
+    # This refers to golden uris. If we cached non-golden data before this will still pass.
     if _exists(file_uri):
         return file_uri
 
@@ -181,6 +182,8 @@ def store_query(analytics, query, folder_uri, fmt='csv', delimiter = '\01', only
 
     if only_golden and not is_data_golden:
         raise ValueError("Data is not golden and we shouldn't write it.")
+    elif not only_golden and not is_data_golden:
+        file_uri = os.path.join(folder_uri, 'not_golden', _generate_folder_uri(query)) + '.' + fmt
 
     if fmt == 'csv':
         columns, rows = report_to_list(out)

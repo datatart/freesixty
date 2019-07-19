@@ -114,7 +114,7 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries):
 
         except HttpError as error:
             if error.resp.reason in quota_related_errors and n < n_retries - 1:
-                time.sleep((2 ** n) + random.random())
+                time.sleep((2 ** n) / 10 + random.random())
             else:
                 raise
 

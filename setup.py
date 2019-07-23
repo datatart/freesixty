@@ -11,10 +11,10 @@ URL = 'https://github.com/datatart/freesixty'
 EMAIL = 'me@rok.dev'
 AUTHOR = 'Rok Mihevc'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.1.15'
+VERSION = '0.1.16'
 
 REQUIRED = [
-    'boto3', 'google-api-python-client', 'oauth2client'
+    'boto3', 'google-api-python-client', 'oauth2client', 'httplib2'
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

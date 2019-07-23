@@ -104,8 +104,11 @@ def _generate_folder_uri(query):
     return '-'.join([query['reportRequests'][0]['viewId'], query_hash, all_dates])
 
 
-def _make_batch_request_with_exponential_backoff(analytics, query, n_retries):
+def _make_batch_request_with_exponential_backoff(analytics, query, n_retries, retriable_errors):
     quota_related_errors = ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']
+
+    if not retriable_errors:
+        retriable_errors = quota_related_errors
 
     for n in range(0, n_retries):
         try:
@@ -113,13 +116,13 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries):
             return report
 
         except HttpError as error:
-            if error.resp.reason in quota_related_errors and n < n_retries - 1:
+            if error.resp.reason in retriable_errors and n < n_retries - 1:
                 time.sleep((2 ** n) / 100 + random.random())
             else:
                 raise
 
 
-def execute_query(analytics, query, n_retries=5):
+def execute_query(analytics, query, n_retries=5, retriable_errors=None):
     """Queries the Analytics Reporting API V4 and returns result.
 
     Args:
@@ -137,7 +140,7 @@ def execute_query(analytics, query, n_retries=5):
 
     while True:
         if n_retries:
-            report = _make_batch_request_with_exponential_backoff(analytics, q, n_retries)
+            report = _make_batch_request_with_exponential_backoff(analytics, q, n_retries, retriable_errors)
         else:
             report = analytics.reports().batchGet(body=q).execute()
 

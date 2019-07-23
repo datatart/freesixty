@@ -106,7 +106,7 @@ def _generate_folder_uri(query):
 
 def _make_batch_request_with_exponential_backoff(analytics, query, n_retries, retriable_errors):
     quota_related_errors = ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']
-
+    timeout_related_errors = ['socket.timeout']
     if not retriable_errors:
         retriable_errors = quota_related_errors
 
@@ -120,7 +120,12 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries, re
                 time.sleep((2 ** n) / 100 + random.random())
             else:
                 raise
-
+        except ssl.SSLError as error:
+            if error.resp.reason in timeout_related_errors and n < n_retries - 1:
+                time.sleep((2 ** n) / 100 + random.random())
+            else:
+                print(error.resp.reason)
+                raise
 
 def execute_query(analytics, query, n_retries=5, retriable_errors=None):
     """Queries the Analytics Reporting API V4 and returns result.

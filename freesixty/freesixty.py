@@ -121,7 +121,7 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries, re
             if any([x in error.resp.reason for x in retriable_errors]) and n < n_retries - 1:
                 time.sleep((2 ** n) / 100 + random.random())
             else:
-                raise
+                pass
 
         except socket.timeout as error:
             print('error.resp.reason: ', error.resp.reason)
@@ -129,7 +129,7 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries, re
             if n < n_retries - 1:
                 time.sleep((2 ** n) / 100 + random.random())
             else:
-                raise
+                pass
 
 def execute_query(analytics, query, n_retries=5, retriable_errors=None):
     """Queries the Analytics Reporting API V4 and returns result.

@@ -116,15 +116,19 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries, re
             return report
 
         except HttpError as error:
-            if error.resp.reason in retriable_errors and n < n_retries - 1:
+            print('error.resp.reason: ', error.resp.reason)
+
+            if any([x in error.resp.reason for x in retriable_errors]) and n < n_retries - 1:
                 time.sleep((2 ** n) / 100 + random.random())
             else:
                 raise
+
         except socket.timeout as error:
+            print('error.resp.reason: ', error.resp.reason)
+
             if n < n_retries - 1:
                 time.sleep((2 ** n) / 100 + random.random())
             else:
-                print("This error:\n", error)
                 raise
 
 def execute_query(analytics, query, n_retries=5, retriable_errors=None):

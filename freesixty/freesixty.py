@@ -105,10 +105,8 @@ def _generate_folder_uri(query):
     return '-'.join([query['reportRequests'][0]['viewId'], query_hash, all_dates])
 
 
-def _make_batch_request_with_exponential_backoff(analytics, query, n_retries, retriable_errors):
-    quota_related_errors = ['userRateLimitExceeded', 'quotaExceeded', 'internalServerError', 'backendError']
-    if not retriable_errors:
-        retriable_errors = quota_related_errors
+def _make_batch_request_with_exponential_backoff(analytics, query, n_retries):
+    quota_related_errors = ['userRateLimitExceeded', 'quotaExceeded', 'rateLimitExceeded', 'internalServerError', 'backendError']
 
     for n in range(0, n_retries):
         try:
@@ -116,23 +114,15 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries, re
             return report
 
         except HttpError as error:
-            if any([x in error.resp.reason for x in retriable_errors]) and n < n_retries - 1:
-                time_to_sleep = (2 ** n) / 100 + random.random()
-                print('error.resp.reason, sleeping: ',time_to_sleep, ' seconds ', error.resp.reason)
-                time.sleep(time_to_sleep)
-
-            else:
-                raise
-
-        except socket.timeout as error:
-            if n < n_retries - 1:
-                time_to_sleep = (2 ** n) / 100 + random.random()
-                print('error.resp.reason, sleeping: ',time_to_sleep, ' seconds ', error.resp.reason)
+            if error.resp.reason in quota_related_errors:
+                time_to_sleep = (2 ** n) / 10 + random.random()
+                print('error.resp.reason, sleeping: ', time_to_sleep, ' seconds ', error.resp.reason)
                 time.sleep(time_to_sleep)
             else:
-                raise
+                raise error
 
-def execute_query(analytics, query, n_retries=5, retriable_errors=None):
+
+def execute_query(analytics, query, n_retries=5, quota_related_errors=None):
     """Queries the Analytics Reporting API V4 and returns result.
 
     Args:

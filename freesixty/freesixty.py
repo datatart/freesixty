@@ -122,7 +122,7 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries):
                 raise error
 
 
-def execute_query(analytics, query, n_retries=5, quota_related_errors=None):
+def execute_query(analytics, query, n_retries=5):
     """Queries the Analytics Reporting API V4 and returns result.
 
     Args:
@@ -140,7 +140,7 @@ def execute_query(analytics, query, n_retries=5, quota_related_errors=None):
 
     while True:
         if n_retries:
-            report = _make_batch_request_with_exponential_backoff(analytics, q, n_retries, retriable_errors)
+            report = _make_batch_request_with_exponential_backoff(analytics, q, n_retries)
         else:
             report = analytics.reports().batchGet(body=q).execute()
 

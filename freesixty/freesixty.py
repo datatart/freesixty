@@ -124,7 +124,7 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries):
         except socket.timeout as error:
             print(socket.timeout)
 
-def execute_query(analytics, query, n_retries=5):
+def execute_query(analytics, query, n_retries=5, page_size=100000, sampling_level = 'LARGE'):
     """Queries the Analytics Reporting API V4 and returns result.
 
     Args:
@@ -137,6 +137,9 @@ def execute_query(analytics, query, n_retries=5):
     assert len(query['reportRequests']) == 1  # Only allow one report per query.
 
     q = copy.deepcopy(query)
+    q['query']['reportRequests'][0]['pageSize'] = page_size
+    q['query']['reportRequests'][0]['samplingLevel'] = sampling_level
+
     out = {'reports': [{'data': {'rows': []}}]}
     is_data_golden = True
 
@@ -146,7 +149,7 @@ def execute_query(analytics, query, n_retries=5):
         else:
             report = analytics.reports().batchGet(body=q).execute()
 
-        batch_is_golden = report['reports'][0]["data"].get('isDataGolden', False)
+        batch_is_golden = report['reports'][0]['data'].get('isDataGolden', False)
 
         if not batch_is_golden:
             is_data_golden = False

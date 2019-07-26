@@ -137,8 +137,8 @@ def execute_query(analytics, query, n_retries=5, page_size=100000, sampling_leve
     assert len(query['reportRequests']) == 1  # Only allow one report per query.
 
     q = copy.deepcopy(query)
-    q['query']['reportRequests'][0]['pageSize'] = page_size
-    q['query']['reportRequests'][0]['samplingLevel'] = sampling_level
+    q['reportRequests'][0]['pageSize'] = page_size
+    q['reportRequests'][0]['samplingLevel'] = sampling_level
 
     out = {'reports': [{'data': {'rows': []}}]}
     is_data_golden = True

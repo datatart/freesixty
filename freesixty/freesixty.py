@@ -121,8 +121,6 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries):
             else:
                 raise error
 
-        except socket.timeout as error:
-            print(socket.timeout)
 
 def execute_query(analytics, query, n_retries=5, page_size=100000, sampling_level = 'LARGE'):
     """Queries the Analytics Reporting API V4 and returns result.

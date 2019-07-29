@@ -115,8 +115,7 @@ def _make_batch_request_with_exponential_backoff(analytics, query, n_retries):
 
         except HttpError as error:
             if error.resp.reason in quota_related_errors:
-                time_to_sleep = (2 ** n) / 10 + random.random()
-                print('error.resp.reason, sleeping: ', time_to_sleep, ' seconds ', error.resp.reason)
+                time_to_sleep = (2 ** n) + random.random()
                 time.sleep(time_to_sleep)
             else:
                 raise error
@@ -192,10 +191,12 @@ def store_query(analytics, query, folder_uri, non_golden_folder_uri=None, fmt='c
         file_uri = os.path.join(non_golden_folder_uri, _generate_folder_uri(query)) + '.' + fmt
 
     if fmt == 'csv':
-        columns, rows = report_to_list(out)
-        data = delimiter.join(columns) + '\n'
-        for row in rows:
-            data = data + delimiter.join(row) + '\n'
+        newline_delimiter = '\n'
+        columns, rows = _report_to_list(out)
+        columns_string = delimiter.join(columns)
+        rows_strings = [delimiter.join(row) for row in rows]
+        rows_string = newline_delimiter.join(rows_strings)
+        data = columns_string + newline_delimiter + rows_string
     elif fmt == 'json':
         data = json.dumps(out, indent=4, sort_keys=True)
     else:
@@ -205,7 +206,7 @@ def store_query(analytics, query, folder_uri, non_golden_folder_uri=None, fmt='c
     return file_uri
 
 
-def report_to_list(report):
+def _report_to_list(report):
     dimension_columns = report['reports'][0]['columnHeader']['dimensions']
     metric_headers = report['reports'][0]['columnHeader']['metricHeader']['metricHeaderEntries']
     metric_columns = [x['name'] for x in metric_headers]

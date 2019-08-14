@@ -32,7 +32,7 @@ def initialize_analyticsreporting(key_file_location, scopes=SCOPES):
     return analytics
 
 
-def _exists(uri):
+def _exists(uri ,aws_access_key_id=None, aws_secret_access_key=None):
     """Checks if the passed URI exists.
 
     Args:
@@ -44,7 +44,10 @@ def _exists(uri):
     parsed_uri = urllib.parse.urlparse(uri)
 
     if parsed_uri.scheme.lower() == 's3':
-        s3 = boto3.resource('s3')
+        if aws_access_key_id:
+            s3 = boto3.resource('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+        else:
+            s3 = boto3.resource('s3')
         try:
             s3.Object(parsed_uri.netloc, parsed_uri.path.lstrip('/')).load()
             return True
@@ -61,7 +64,7 @@ def _exists(uri):
         raise NotImplementedError('Invalid URI on method not yet implemented. {uri}'.format(uri=uri))
 
 
-def _write(data, uri):
+def _write(data, uri, aws_access_key_id=None, aws_secret_access_key=None):
     """Writes passed data into the passed URI.
 
     Args:
@@ -72,7 +75,10 @@ def _write(data, uri):
     parsed_uri = urllib.parse.urlparse(uri)
 
     if parsed_uri.scheme.lower() == 's3':
-        s3 = boto3.resource('s3')
+        if aws_access_key_id:
+            s3 = boto3.resource('s3', aws_access_key_id = aws_access_key_id, aws_secret_access_key = aws_secret_access_key)
+        else:
+            s3 = boto3.resource('s3')
         s3.Object(parsed_uri.netloc, parsed_uri.path.lstrip('/')).put(Body=data)
 
     elif parsed_uri.scheme == 'file':
@@ -167,7 +173,7 @@ def execute_query(analytics, query, n_retries=5, page_size=100000, sampling_leve
     return out, is_data_golden
 
 
-def store_query(analytics, query, folder_uri, non_golden_folder_uri=None, fmt='csv', delimiter='\01', only_golden=True, n_retries=5):
+def store_query(analytics, query, folder_uri, non_golden_folder_uri=None, fmt='csv', delimiter='\01', only_golden=True, n_retries=5, aws_access_key_id=None, aws_secret_access_key=None):
     """Queries the Analytics Reporting API V4 and stores the result of the query to the given URI.
     If data already exists the query is not executed.
 
@@ -183,7 +189,7 @@ def store_query(analytics, query, folder_uri, non_golden_folder_uri=None, fmt='c
     file_uri = os.path.join(folder_uri, _generate_folder_uri(query)) + '.' + fmt
 
     # This refers to golden uris. If we cached non-golden data before this will still pass.
-    if _exists(file_uri):
+    if _exists(file_uri, aws_access_key_id, aws_secret_access_key):
         return file_uri
 
     out, is_data_golden = execute_query(analytics, query, n_retries)
@@ -205,7 +211,7 @@ def store_query(analytics, query, folder_uri, non_golden_folder_uri=None, fmt='c
     else:
         raise NotImplementedError("Format {fmt} support is not yet implemented.")
 
-    _write(data, file_uri)
+    _write(data, file_uri, aws_access_key_id, aws_secret_access_key)
     return file_uri
 
 

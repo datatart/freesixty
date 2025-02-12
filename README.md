@@ -9,7 +9,7 @@ pip install freesixty
 
 ## Access credentials
 
-To set up access to your Google Analytics follow first step of [these instructions](https://developers.google.com/analytics/devguides/reporting/core/v4/quickstart/service-py).
+To set up access to your Google Analytics follow first step of [these instructions](https://developers.google.com/analytics/devguides/reporting/data/v1/quickstart-client-libraries?hl=en#python).
 Store them in your local machine and enter their path into `KEY_FILE_LOCATION` variable.
 
 ## Get data
